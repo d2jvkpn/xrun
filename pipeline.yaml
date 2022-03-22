@@ -1,0 +1,16 @@
+work_dir: temp
+
+tasks:
+- name: xxxx
+  kind: samples
+  parallel: 2
+  block: false
+  command: |
+    echo {{.name}}
+    sleep 10
+
+objects:
+  samples:
+  - {name: a1}
+  - {name: a2}
+  - {name: a3}
