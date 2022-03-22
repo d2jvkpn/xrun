@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	DefaultDir  = "temp"
-	DefaultHead = `#! /usr/bin/env bash
+	DEFAULT_Dir       = "temp"
+	DEFAULT_NameField = "name"
+	DEFAULT_Head      = `#! /usr/bin/env bash
 set -eu -o pipefail
 _wd=$(pwd)/
 _path=$(dirname $0 | xargs -i readlink -f {})

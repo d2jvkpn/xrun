@@ -1,4 +1,5 @@
 work_dir: temp
+name_field: name
 
 tasks:
 - name: xxxx

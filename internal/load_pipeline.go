@@ -29,10 +29,10 @@ type Task struct {
 }
 
 type Pipeline struct {
-	Tasks   []Task                         `mapstructure:"tasks"`
-	Objects map[string][]map[string]string `mapstructure:"objects"`
-	dir     string
-	taskMap map[string]int
+	Tasks          []Task                         `mapstructure:"tasks"`
+	Objects        map[string][]map[string]string `mapstructure:"objects"`
+	dir, nameField string
+	taskMap        map[string]int
 }
 
 func LoadPipeline(fp string) (p *Pipeline, err error) {
@@ -73,8 +73,11 @@ func LoadPipeline(fp string) (p *Pipeline, err error) {
 			return nil, fmt.Errorf("duplicate task name found: %s", name)
 		}
 	}
-	if conf.GetString("work_dir") == "" {
-		p.dir = DefaultDir
+	if p.dir = conf.GetString("work_dir"); p.dir == "" {
+		p.dir = DEFAULT_Dir
+	}
+	if p.nameField = conf.GetString("name_field"); p.nameField == "" {
+		p.nameField = DEFAULT_NameField
 	}
 
 	if err = os.MkdirAll(p.dir, 0755); err != nil {
@@ -162,7 +165,7 @@ func (p *Pipeline) run(idx int) (errs []error) {
 				logFile    *os.File
 			)
 
-			objectName = task.objects[i]["name"]
+			objectName = task.objects[i][p.nameField]
 
 			defer func() {
 				if err != nil {
@@ -177,7 +180,7 @@ func (p *Pipeline) run(idx int) (errs []error) {
 			now, name := Jobname(task.Name, objectName)
 			prefix := filepath.Join(p.dir, name)
 			script := prefix + ".sh"
-			err = ioutil.WriteFile(script, []byte(DefaultHead+commands[i]+"\n"), 0755)
+			err = ioutil.WriteFile(script, []byte(DEFAULT_Head+commands[i]+"\n"), 0755)
 			if err != nil {
 				return
 			}
