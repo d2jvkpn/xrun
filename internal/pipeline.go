@@ -38,7 +38,7 @@ type Pipeline struct {
 	taskMap   map[string]int
 }
 
-func LoadPipeline(fp string) (p *Pipeline, err error) {
+func LoadPipeline(fp string) (pl *Pipeline, err error) {
 	var (
 		ok   bool
 		name string
@@ -54,14 +54,14 @@ func LoadPipeline(fp string) (p *Pipeline, err error) {
 		return nil, fmt.Errorf("read config failed: %w", err)
 	}
 
-	p = new(Pipeline)
-	if err = conf.Unmarshal(&p); err != nil {
+	pl = new(Pipeline)
+	if err = conf.Unmarshal(&pl); err != nil {
 		return nil, err
 	}
 
-	p.taskMap = make(map[string]int, len(p.Tasks))
-	for i := range p.Tasks {
-		name = p.Tasks[i].Name
+	pl.taskMap = make(map[string]int, len(pl.Tasks))
+	for i := range pl.Tasks {
+		name = pl.Tasks[i].Name
 		if name == "" {
 			return nil, fmt.Errorf("tasks[%d] name is empty", i)
 		}
@@ -70,59 +70,59 @@ func LoadPipeline(fp string) (p *Pipeline, err error) {
 			return nil, fmt.Errorf("tasks[%d] name is invalid: %q", i, name)
 		}
 
-		if _, ok = p.taskMap[name]; !ok {
-			p.taskMap[name] = i
+		if _, ok = pl.taskMap[name]; !ok {
+			pl.taskMap[name] = i
 		} else {
 			return nil, fmt.Errorf("duplicate task name found: %s", name)
 		}
 	}
-	if p.dir = conf.GetString("work_dir"); p.dir == "" {
-		p.dir = DEFAULT_Dir
+	if pl.dir = conf.GetString("work_dir"); pl.dir == "" {
+		pl.dir = DEFAULT_Dir
 	}
-	p.dir = filepath.Join(
-		p.dir,
-		p.Pipeline+"_"+time.Now().Format("2006-01-02T15-04-05_")+RandString(8),
+	pl.dir = filepath.Join(
+		pl.dir,
+		pl.Pipeline+"_"+time.Now().Format("2006-01-02T15-04-05_")+RandString(8),
 	)
 
-	if p.nameField = conf.GetString("name_field"); p.nameField == "" {
-		p.nameField = DEFAULT_NameField
+	if pl.nameField = conf.GetString("name_field"); pl.nameField == "" {
+		pl.nameField = DEFAULT_NameField
 	}
 
-	if err = os.MkdirAll(p.dir, 0755); err != nil {
+	if err = os.MkdirAll(pl.dir, 0755); err != nil {
 		return nil, err
 	}
 
-	if err = p.compile(); err != nil {
+	if err = pl.compile(); err != nil {
 		return nil, err
 	}
 
-	return p, nil
+	return pl, nil
 }
 
-func (p *Pipeline) compile() (err error) {
-	for i := range p.Tasks {
-		if err = p.compileAt(i); err != nil {
-			return fmt.Errorf("compile %s([%d]): %w", p.Tasks[i].Name, i, err)
+func (pl *Pipeline) compile() (err error) {
+	for i := range pl.Tasks {
+		if err = pl.compileAt(i); err != nil {
+			return fmt.Errorf("compile %s([%d]): %w", pl.Tasks[i].Name, i, err)
 		}
 	}
 	return nil
 }
 
-func (p *Pipeline) compileAt(idx int) (err error) {
+func (pl *Pipeline) compileAt(idx int) (err error) {
 	var task *Task
 
-	if idx > len(p.Tasks)-1 {
+	if idx > len(pl.Tasks)-1 {
 		return nil
 	}
-	task = &p.Tasks[idx]
+	task = &pl.Tasks[idx]
 
 	if task.command, err = template.New(task.Name).Parse(task.Command); err != nil {
 		return err
 	}
 
-	for k := range p.Objects {
+	for k := range pl.Objects {
 		if k == task.Kind {
-			task.objects = p.Objects[k]
+			task.objects = pl.Objects[k]
 		}
 	}
 
@@ -141,7 +141,7 @@ func (p *Pipeline) compileAt(idx int) (err error) {
 	return
 }
 
-func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
+func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 	var (
 		n    int
 		list []int
@@ -149,13 +149,13 @@ func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 		task *Task
 	)
 
-	if n = len(p.Tasks); idx < 0 || idx > n-1 || n == 0 {
+	if n = len(pl.Tasks); idx < 0 || idx > n-1 || n == 0 {
 		return nil
 	}
-	task = &p.Tasks[idx]
+	task = &pl.Tasks[idx]
 
 	if pn < 0 {
-		pn = int(p.Tasks[idx].Parallel)
+		pn = int(pl.Tasks[idx].Parallel)
 	}
 
 	if len(objects) == 0 {
@@ -165,7 +165,7 @@ func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 		}
 	} else {
 		for i := range task.objects {
-			if indexOf(objects, task.objects[i][p.nameField]) > -1 {
+			if indexOf(objects, task.objects[i][pl.nameField]) > -1 {
 				list = append(list, i)
 			}
 		}
@@ -192,7 +192,7 @@ func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 				logFile    *os.File
 			)
 
-			objectName = task.objects[i][p.nameField]
+			objectName = task.objects[i][pl.nameField]
 
 			defer func() {
 				if err != nil {
@@ -205,7 +205,7 @@ func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 			}()
 
 			now, name := Jobname(task.Name, objectName)
-			prefix := filepath.Join(p.dir, name)
+			prefix := filepath.Join(pl.dir, name)
 			script := prefix + ".sh"
 			bts = []byte(DEFAULT_Head + "\n" + task.commands[i] + "\n")
 			err = ioutil.WriteFile(script, bts, 0755)
@@ -244,7 +244,7 @@ func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 	return
 }
 
-func (p *Pipeline) RunTask(name string, pn int, objects ...string) (err error) {
+func (pl *Pipeline) RunTask(name string, pn int, objects ...string) (err error) {
 	var (
 		ok   bool
 		idx  int
@@ -252,11 +252,11 @@ func (p *Pipeline) RunTask(name string, pn int, objects ...string) (err error) {
 		strs []string
 	)
 
-	if idx, ok = p.taskMap[name]; !ok {
+	if idx, ok = pl.taskMap[name]; !ok {
 		return fmt.Errorf("task not found")
 	}
 
-	errs = p.run(idx, pn, objects...)
+	errs = pl.run(idx, pn, objects...)
 	strs = make([]string, 0, len(errs))
 	for i := range errs {
 		if errs[i] != nil {
