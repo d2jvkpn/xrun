@@ -50,7 +50,7 @@ func NewVersionCmd(name, version, buildTime string) (command *cobra.Command) {
 			}
 
 			if jsonFmt {
-				bts, _ := json.Marshal(v)
+				bts, _ := json.MarshalIndent(v, "", "  ")
 				fmt.Printf("%s\n", bts)
 			} else {
 				fmt.Printf("%s\n", v)
