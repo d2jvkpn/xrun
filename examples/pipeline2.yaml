@@ -5,7 +5,7 @@ name_field: name
 
 tasks:
 - name: sleep
-  kind: samples
+  bind: samples
   parallel: 2
   commands:
   - name: subtask1

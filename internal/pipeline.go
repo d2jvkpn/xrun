@@ -19,7 +19,7 @@ import (
 
 type Task struct {
 	Name     string `mapstructure:"name"`
-	Kind     string `mapstructure:"kind"`
+	Bind     string `mapstructure:"bind"`
 	Parallel uint   `mapstructure:"parallel"`
 	Command  string `mapstructure:"command"`
 
@@ -121,7 +121,7 @@ func (pl *Pipeline) compileAt(idx int) (err error) {
 	}
 
 	for k := range pl.Objects {
-		if k == task.Kind {
+		if k == task.Bind {
 			task.objects = pl.Objects[k]
 		}
 	}
