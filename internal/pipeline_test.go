@@ -27,7 +27,7 @@ func TestTemplate(t *testing.T) {
 }
 
 func TestLoadPipeline(t *testing.T) {
-	p, err := LoadPipeline("../pipeline.yaml")
+	p, err := LoadPipeline("../examples/pipeline.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,6 +35,6 @@ func TestLoadPipeline(t *testing.T) {
 
 	fmt.Printf("%+v\n", p.Tasks[0].commands)
 
-	errs := p.run(0)
+	errs := p.run(0, -1)
 	fmt.Println(errs)
 }

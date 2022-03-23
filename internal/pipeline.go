@@ -136,33 +136,47 @@ func (p *Pipeline) compileAt(idx int) (err error) {
 	return
 }
 
-func (p *Pipeline) run(idx int, ps ...uint) (errs []error) {
+func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 	var (
-		n  int
-		ch chan struct{}
+		n    int
+		list []int
+		ch   chan struct{}
+		task *Task
 	)
 
 	if n = len(p.Tasks); idx < 0 || idx > n-1 || n == 0 {
 		return nil
 	}
+	task = &p.Tasks[idx]
 
-	if len(ps) > 0 {
-		p.Tasks[idx].Parallel = ps[0]
+	if pn < 0 {
+		pn = int(p.Tasks[idx].Parallel)
 	}
 
-	task := &p.Tasks[idx]
-	commands := task.commands
-	n = len(commands)
+	if len(objects) == 0 {
+		list = make([]int, 0, len(task.objects))
+		for i := range task.objects {
+			list = append(list, i)
+		}
+	} else {
+		for i := range task.objects {
+			if indexOf(objects, task.objects[i][p.nameField]) > -1 {
+				list = append(list, i)
+			}
+		}
+	}
+
+	n = len(list)
 	errs = make([]error, n)
 	wg := new(sync.WaitGroup)
 
-	if task.Parallel == 0 {
+	if pn == 0 {
 		ch = make(chan struct{}, n)
 	} else {
-		ch = make(chan struct{}, int(task.Parallel))
+		ch = make(chan struct{}, pn)
 	}
 
-	for i := range commands {
+	for _, i := range list {
 		ch <- struct{}{}
 		wg.Add(1)
 		go func(i int) {
@@ -187,7 +201,7 @@ func (p *Pipeline) run(idx int, ps ...uint) (errs []error) {
 			now, name := Jobname(task.Name, objectName)
 			prefix := filepath.Join(p.dir, name)
 			script := prefix + ".sh"
-			err = ioutil.WriteFile(script, []byte(DEFAULT_Head+commands[i]+"\n"), 0755)
+			err = ioutil.WriteFile(script, []byte(DEFAULT_Head+task.commands[i]+"\n"), 0755)
 			if err != nil {
 				return
 			}
@@ -223,7 +237,7 @@ func (p *Pipeline) run(idx int, ps ...uint) (errs []error) {
 	return
 }
 
-func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
+func (p *Pipeline) RunTask(name string, pn int, objects ...string) (err error) {
 	var (
 		ok   bool
 		idx  int
@@ -235,7 +249,7 @@ func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
 		return fmt.Errorf("task not found")
 	}
 
-	errs = p.run(idx, ps...)
+	errs = p.run(idx, pn, objects...)
 	strs = make([]string, 0, len(errs))
 	for i := range errs {
 		if errs[i] != nil {
