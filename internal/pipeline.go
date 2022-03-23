@@ -183,6 +183,7 @@ func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 			var (
 				err        error
 				objectName string
+				bts        []byte
 				logFile    *os.File
 			)
 
@@ -201,7 +202,8 @@ func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 			now, name := Jobname(task.Name, objectName)
 			prefix := filepath.Join(p.dir, name)
 			script := prefix + ".sh"
-			err = ioutil.WriteFile(script, []byte(DEFAULT_Head+task.commands[i]+"\n"), 0755)
+			bts = []byte(DEFAULT_Head + "\n" + task.commands[i] + "\n")
+			err = ioutil.WriteFile(script, bts, 0755)
 			if err != nil {
 				return
 			}
@@ -214,7 +216,7 @@ func (p *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 				fmt.Sprintf("#### >>> %s %s\n", now.Format(time.RFC3339), task.Name),
 			)
 
-			bts, _ := json.Marshal(task.objects[i])
+			bts, _ = json.Marshal(task.objects[i])
 			logFile.WriteString(fmt.Sprintf("####     %s\n\n", bts))
 
 			cmd := exec.Command("/bin/bash", script)
