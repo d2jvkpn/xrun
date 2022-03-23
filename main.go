@@ -25,6 +25,7 @@ func main() {
 	root := &cobra.Command{Use: "xrun"}
 
 	root.AddCommand(cmd.NewVersionCmd("version", _Version, _BuildTime))
+	root.AddCommand(cmd.NewRunCmd("run"))
 
 	root.Execute()
 }

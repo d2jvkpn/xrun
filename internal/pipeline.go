@@ -29,10 +29,11 @@ type Task struct {
 }
 
 type Pipeline struct {
-	Tasks          []Task                         `mapstructure:"tasks"`
-	Objects        map[string][]map[string]string `mapstructure:"objects"`
-	dir, nameField string
-	taskMap        map[string]int
+	Tasks     []Task                         `mapstructure:"tasks"`
+	Objects   map[string][]map[string]string `mapstructure:"objects"`
+	dir       string
+	nameField string
+	taskMap   map[string]int
 }
 
 func LoadPipeline(fp string) (p *Pipeline, err error) {
@@ -76,6 +77,8 @@ func LoadPipeline(fp string) (p *Pipeline, err error) {
 	if p.dir = conf.GetString("work_dir"); p.dir == "" {
 		p.dir = DEFAULT_Dir
 	}
+	p.dir = filepath.Join(p.dir, time.Now().Format("2006-01-02T15-04-05_")+RandString(8))
+
 	if p.nameField = conf.GetString("name_field"); p.nameField == "" {
 		p.nameField = DEFAULT_NameField
 	}
@@ -216,7 +219,7 @@ func (p *Pipeline) run(idx int) (errs []error) {
 	return
 }
 
-func (p *Pipeline) RunTask(name string) (err error) {
+func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
 	var (
 		ok   bool
 		idx  int
@@ -225,6 +228,10 @@ func (p *Pipeline) RunTask(name string) (err error) {
 
 	if idx, ok = p.taskMap[name]; !ok {
 		return fmt.Errorf("task not found")
+	}
+
+	if len(ps) > 0 {
+		p.Tasks[idx].Parallel = ps[0]
 	}
 
 	errs = p.run(idx)

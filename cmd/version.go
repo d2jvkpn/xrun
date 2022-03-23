@@ -55,7 +55,7 @@ func NewVersionCmd(name, version, buildTime string) (command *cobra.Command) {
 	}
 
 	fSet = command.Flags()
-	fSet.BoolVar(&jsonFmt, "json", false, "output command in json object")
+	fSet.BoolVarP(&jsonFmt, "json", "j", false, "output command in json object")
 
 	return command
 }
