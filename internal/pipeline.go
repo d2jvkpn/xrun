@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
+	// "strings"
 	"sync"
 	"text/template"
 	"time"
@@ -136,7 +136,7 @@ func (p *Pipeline) compileAt(idx int) (err error) {
 	return
 }
 
-func (p *Pipeline) run(idx int) (errs []error) {
+func (p *Pipeline) run(idx int, ps ...uint) (errs []error) {
 	var (
 		n  int
 		ch chan struct{}
@@ -144,6 +144,10 @@ func (p *Pipeline) run(idx int) (errs []error) {
 
 	if n = len(p.Tasks); idx < 0 || idx > n-1 || n == 0 {
 		return nil
+	}
+
+	if len(ps) > 0 {
+		p.Tasks[idx].Parallel = ps[0]
 	}
 
 	task := &p.Tasks[idx]
@@ -173,7 +177,7 @@ func (p *Pipeline) run(idx int) (errs []error) {
 			defer func() {
 				if err != nil {
 					errs[i] = fmt.Errorf(
-						">>> %s objects[%d](%s): %w", task.Name, i, objectName, err,
+						"%s objects[%d](%s): %w", task.Name, i, objectName, err,
 					)
 				}
 				<-ch
@@ -230,12 +234,7 @@ func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
 		return fmt.Errorf("task not found")
 	}
 
-	if len(ps) > 0 {
-		p.Tasks[idx].Parallel = ps[0]
-	}
-
-	errs = p.run(idx)
-
+	errs = p.run(idx, ps...)
 	ok = false
 	strs := make([]string, 0, len(errs))
 	for i := range errs {
@@ -246,7 +245,13 @@ func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
 	}
 
 	if ok {
-		err = errors.New(strings.Join(strs, "\n"))
+		data := map[string]interface{}{
+			"title":  fmt.Sprintf("%d task(s) failed", len(strs)),
+			"errors": strs,
+		}
+
+		bts, _ := json.Marshal(data)
+		err = errors.New(string(bts))
 	}
 
 	return err
