@@ -1,18 +1,15 @@
 package internal
 
 type Comparable interface {
-	string | int | int32 | int64
+	bool | uint | uint32 | uint64 | int | int32 | int64 | string
 }
 
-func indexOf[T Comparable](list []T, e T) (idx int) {
-	idx = -1
-
+func indexOf[T Comparable](list []T, e T) int {
 	for i := range list {
 		if list[i] == e {
-			idx = i
-			break
+			return i
 		}
 	}
 
-	return
+	return -1
 }
