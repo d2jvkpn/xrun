@@ -6,9 +6,11 @@ tasks:
 - name: sleep
   kind: samples
   parallel: 2
-  command: |
-    echo {{.name}}
-    sleep {{.secs}}
+  commands:
+  - name: subtask1
+    command: |
+      echo {{.name}}
+      sleep {{.secs}}
 
 objects:
   samples:

@@ -21,7 +21,6 @@ type Task struct {
 	Name     string `mapstructure:"name"`
 	Kind     string `mapstructure:"kind"`
 	Parallel uint   `mapstructure:"parallel"`
-	Block    bool   `mapstructure:"block"`
 	Command  string `mapstructure:"command"`
 
 	command  *template.Template
