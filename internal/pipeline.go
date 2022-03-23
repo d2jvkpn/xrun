@@ -29,8 +29,9 @@ type Task struct {
 }
 
 type Pipeline struct {
-	Tasks   []Task                         `mapstructure:"tasks"`
-	Objects map[string][]map[string]string `mapstructure:"objects"`
+	Pipeline string                         `mapstructure:"pipeline"`
+	Tasks    []Task                         `mapstructure:"tasks"`
+	Objects  map[string][]map[string]string `mapstructure:"objects"`
 
 	dir       string
 	nameField string
@@ -78,7 +79,10 @@ func LoadPipeline(fp string) (p *Pipeline, err error) {
 	if p.dir = conf.GetString("work_dir"); p.dir == "" {
 		p.dir = DEFAULT_Dir
 	}
-	p.dir = filepath.Join(p.dir, time.Now().Format("2006-01-02T15-04-05_")+RandString(8))
+	p.dir = filepath.Join(
+		p.dir,
+		p.Pipeline+"_"+time.Now().Format("2006-01-02T15-04-05_")+RandString(8),
+	)
 
 	if p.nameField = conf.GetString("name_field"); p.nameField == "" {
 		p.nameField = DEFAULT_NameField
