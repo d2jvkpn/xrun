@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"strings"
 
 	"github.com/d2jvkpn/xrun/cmd"
@@ -22,9 +23,10 @@ func init() {
 }
 
 func main() {
-	root := &cobra.Command{Use: "xrun"}
+	link := "https://github.com/d2jvkpn/xrun"
+	root := &cobra.Command{Use: fmt.Sprintf("xrun (%s)", link)}
 
-	root.AddCommand(cmd.NewVersionCmd("version", _Version, _BuildTime))
+	root.AddCommand(cmd.NewVersionCmd("version", _Version, _BuildTime, link))
 	root.AddCommand(cmd.NewRunCmd("run"))
 
 	root.Execute()

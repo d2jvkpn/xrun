@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"runtime"
@@ -9,11 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-)
-
-var (
-	//go:embed .project
-	_Project string
 )
 
 type Version struct {
@@ -30,7 +24,7 @@ func (v Version) String() string {
 	)
 }
 
-func NewVersionCmd(name, version, buildTime string) (command *cobra.Command) {
+func NewVersionCmd(name, version, buildTime, link string) (command *cobra.Command) {
 	var (
 		jsonFmt bool
 		fSet    *pflag.FlagSet
@@ -43,7 +37,7 @@ func NewVersionCmd(name, version, buildTime string) (command *cobra.Command) {
 
 		Run: func(cmd *cobra.Command, args []string) {
 			v := Version{
-				Project:   strings.Fields(_Project)[0],
+				Project:   link,
 				Version:   version,
 				BuildTime: buildTime,
 				GoVersion: strings.Replace(runtime.Version(), "go", "", 1),
