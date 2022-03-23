@@ -7,5 +7,5 @@ make build
 
 ./xrun version --json
 
-./xrun run -t sleep -p 0
+./xrun run -y examples/pipeline.yaml -t sleep -p 0
 ls temp/
