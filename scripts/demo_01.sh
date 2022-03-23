@@ -7,5 +7,5 @@ make build
 
 ./xrun version --json
 
-./xrun run -t xxxx -p 0
+./xrun run -t sleep -p 0
 ls temp/
