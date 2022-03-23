@@ -246,6 +246,7 @@ func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
 	if len(strs) > 0 {
 		data := map[string]interface{}{
 			"title":  fmt.Sprintf("%d task(s) failed", len(strs)),
+			"number": len(strs),
 			"errors": strs,
 		}
 
