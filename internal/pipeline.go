@@ -204,8 +204,9 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 				wg.Done()
 			}()
 
-			now, name := Jobname(task.Name, objectName)
-			prefix := filepath.Join(pl.dir, name)
+			now, _ := Jobname(task.Name, objectName)
+			// prefix := filepath.Join(pl.dir, name)
+			prefix := filepath.Join(pl.dir, task.Name+"__"+objectName)
 			script := prefix + ".sh"
 			bts = []byte(DEFAULT_Head + "\n" + task.commands[i] + "\n")
 			err = ioutil.WriteFile(script, bts, 0755)
