@@ -30,11 +30,6 @@ func (v Version) String() string {
 	)
 }
 
-func (v *Version) Json() string {
-	bts, _ := json.Marshal(v)
-	return string(bts)
-}
-
 func NewVersionCmd(name, version, buildTime string) (command *cobra.Command) {
 	var (
 		jsonFmt bool
@@ -55,7 +50,8 @@ func NewVersionCmd(name, version, buildTime string) (command *cobra.Command) {
 			}
 
 			if jsonFmt {
-				fmt.Println(v.Json())
+				bts, _ := json.Marshal(v)
+				fmt.Printf("%s\n", bts)
 			} else {
 				fmt.Printf("%s\n", v)
 			}
