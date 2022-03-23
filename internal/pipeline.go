@@ -23,14 +23,16 @@ type Task struct {
 	Parallel uint   `mapstructure:"parallel"`
 	Block    bool   `mapstructure:"block"`
 	Command  string `mapstructure:"command"`
+
 	command  *template.Template
 	objects  []map[string]string
 	commands []string
 }
 
 type Pipeline struct {
-	Tasks     []Task                         `mapstructure:"tasks"`
-	Objects   map[string][]map[string]string `mapstructure:"objects"`
+	Tasks   []Task                         `mapstructure:"tasks"`
+	Objects map[string][]map[string]string `mapstructure:"objects"`
+
 	dir       string
 	nameField string
 	taskMap   map[string]int
@@ -261,9 +263,9 @@ func (p *Pipeline) RunTask(name string, pn int, objects ...string) (err error) {
 
 	if len(strs) > 0 {
 		data := map[string]interface{}{
-			"title":    fmt.Sprintf("%d task(s) failed", len(strs)),
 			"taskName": name,
 			"number":   len(strs),
+			"total":    len(errs),
 			"errors":   strs,
 		}
 		bts, _ := json.Marshal(data)
