@@ -1,4 +1,5 @@
 work_dir: temp
+# field as object name
 name_field: name
 
 tasks:
