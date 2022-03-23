@@ -235,16 +235,14 @@ func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
 	}
 
 	errs = p.run(idx, ps...)
-	ok = false
 	strs := make([]string, 0, len(errs))
 	for i := range errs {
 		if errs[i] != nil {
-			ok = true
 			strs = append(strs, errs[i].Error())
 		}
 	}
 
-	if ok {
+	if len(strs) > 0 {
 		data := map[string]interface{}{
 			"title":  fmt.Sprintf("%d task(s) failed", len(strs)),
 			"errors": strs,
