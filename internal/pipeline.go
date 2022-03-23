@@ -228,6 +228,7 @@ func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
 		ok   bool
 		idx  int
 		errs []error
+		strs []string
 	)
 
 	if idx, ok = p.taskMap[name]; !ok {
@@ -235,7 +236,7 @@ func (p *Pipeline) RunTask(name string, ps ...uint) (err error) {
 	}
 
 	errs = p.run(idx, ps...)
-	strs := make([]string, 0, len(errs))
+	strs = make([]string, 0, len(errs))
 	for i := range errs {
 		if errs[i] != nil {
 			strs = append(strs, errs[i].Error())
