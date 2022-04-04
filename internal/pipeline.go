@@ -186,13 +186,16 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 		wg.Add(1)
 		go func(i int) {
 			var (
-				err        error
-				objectName string
-				bts        []byte
-				logFile    *os.File
+				err                    error
+				objectName             string
+				bts                    []byte
+				stdoutFile, stderrFile *os.File
 			)
 
 			objectName = task.objects[i][pl.nameField]
+			now, _ := Jobname(task.Name, objectName)
+			// prefix := filepath.Join(pl.dir, name)
+			prefix := filepath.Join(pl.dir, task.Name+"__"+objectName)
 
 			defer func() {
 				if err != nil {
@@ -200,13 +203,15 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 						"%s objects[%d](%s): %w", task.Name, i, objectName, err,
 					)
 				}
+				if info, e := os.Stat(prefix + ".error"); e == nil {
+					if info.Size() == 0 {
+						os.Remove(prefix + ".error") // ignore error
+					}
+				}
 				<-ch
 				wg.Done()
 			}()
 
-			now, _ := Jobname(task.Name, objectName)
-			// prefix := filepath.Join(pl.dir, name)
-			prefix := filepath.Join(pl.dir, task.Name+"__"+objectName)
 			script := prefix + ".sh"
 			bts = []byte(DEFAULT_Head + "\n" + task.commands[i] + "\n")
 			err = ioutil.WriteFile(script, bts, 0755)
@@ -214,29 +219,34 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 				return
 			}
 
-			if logFile, err = os.Create(prefix + ".log"); err != nil {
+			if stdoutFile, err = os.Create(prefix + ".log"); err != nil {
 				return
 			}
-			defer logFile.Close()
-			logFile.WriteString(
+			defer stdoutFile.Close()
+			if stderrFile, err = os.Create(prefix + ".error"); err != nil {
+				return
+			}
+			defer stderrFile.Close()
+
+			stdoutFile.WriteString(
 				fmt.Sprintf("#### >>> %s %s\n", now.Format(time.RFC3339), task.Name),
 			)
 
 			bts, _ = json.Marshal(task.objects[i])
-			logFile.WriteString(fmt.Sprintf("####     %s\n\n", bts))
+			stdoutFile.WriteString(fmt.Sprintf("####     %s\n\n", bts))
 
 			cmd := exec.Command("/bin/bash", script)
-			cmd.Stdout, cmd.Stderr = logFile, logFile
+			cmd.Stdout, cmd.Stderr = stdoutFile, stderrFile
 			fmt.Println(">>>", now.Format(time.RFC3339), "start", prefix)
 
 			err = cmd.Run()
 			at := time.Now().Format(time.RFC3339)
 			if err == nil {
 				fmt.Println("<<<", at, "end", prefix)
-				logFile.WriteString(fmt.Sprintf("\n\n#### <<< %s\n", at))
+				stdoutFile.WriteString(fmt.Sprintf("\n\n#### <<< %s\n", at))
 			} else {
 				fmt.Printf("<<< %s %s %s: %v", at, "failed", prefix, err)
-				logFile.WriteString(fmt.Sprintf("\n#### <<< %s %v\n", at, err))
+				stdoutFile.WriteString(fmt.Sprintf("\n#### <<< %s %v\n", at, err))
 			}
 		}(i)
 	}
