@@ -186,10 +186,12 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 		wg.Add(1)
 		go func(i int) {
 			var (
-				err                    error
-				objectName             string
-				bts                    []byte
-				stdoutFile, stderrFile *os.File
+				started    bool
+				err        error
+				objectName string
+				bts        []byte
+				stdoutFile *os.File
+				stderrFile *os.File
 			)
 
 			objectName = task.objects[i][pl.nameField]
@@ -203,11 +205,17 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 						"%s objects[%d](%s): %w", task.Name, i, objectName, err,
 					)
 				}
-				if info, e := os.Stat(prefix + ".error"); e == nil {
-					if info.Size() == 0 {
-						os.Remove(prefix + ".error") // ignore error
+
+				if started {
+					os.Rename(prefix+".logging", prefix+".log")
+
+					if info, e := os.Stat(prefix + ".error"); e == nil {
+						if info.Size() == 0 {
+							os.Remove(prefix + ".error") // ignore error
+						}
 					}
 				}
+
 				<-ch
 				wg.Done()
 			}()
@@ -219,7 +227,7 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 				return
 			}
 
-			if stdoutFile, err = os.Create(prefix + ".log"); err != nil {
+			if stdoutFile, err = os.Create(prefix + ".logging"); err != nil {
 				return
 			}
 			defer stdoutFile.Close()
@@ -239,7 +247,7 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 			cmd.Stdout, cmd.Stderr = stdoutFile, stderrFile
 			fmt.Println(">>>", now.Format(time.RFC3339), "start", prefix)
 
-			err = cmd.Run()
+			err, started = cmd.Run(), true
 			at := time.Now().Format(time.RFC3339)
 			if err == nil {
 				fmt.Println("<<<", at, "end", prefix)
