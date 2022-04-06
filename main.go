@@ -27,6 +27,7 @@ func main() {
 
 	root.AddCommand(cmd.NewVersionCmd("version", _Version, _BuildTime, link))
 	root.AddCommand(cmd.NewRunCmd("run"))
+	root.AddCommand(cmd.NewDemoCmd("demo"))
 
 	root.Execute()
 }

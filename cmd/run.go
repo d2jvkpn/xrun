@@ -12,10 +12,12 @@ import (
 
 func NewRunCmd(name string) (command *cobra.Command) {
 	var (
-		parallel       int
-		objects        []string
-		pipeline, task string
-		fSet           *pflag.FlagSet
+		parallel int
+		objects  []string
+		pipeline string
+		task     string
+		run      string
+		fSet     *pflag.FlagSet
 	)
 
 	command = &cobra.Command{
@@ -29,7 +31,7 @@ func NewRunCmd(name string) (command *cobra.Command) {
 				pl  *internal.Pipeline
 			)
 
-			if pl, err = internal.LoadPipeline(pipeline); err != nil {
+			if pl, err = internal.LoadPipeline(pipeline, run); err != nil {
 				log.Fatalln(err)
 			}
 
@@ -44,6 +46,7 @@ func NewRunCmd(name string) (command *cobra.Command) {
 
 	fSet.StringVarP(&pipeline, "pipeline", "y", "pipeline.yaml", "pipeline yaml")
 	fSet.StringVarP(&task, "task", "t", "", "task name")
+	fSet.StringVarP(&run, "run", "r", "", "run name")
 	fSet.IntVarP(&parallel, "parallel", "p", -1, "parallel number, 0 for no limit")
 	fSet.StringArrayVarP(&objects, "object", "o", []string{}, "select objects")
 

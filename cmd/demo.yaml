@@ -1,0 +1,19 @@
+pipeline: Project01
+work_dir: temp
+# field as object name
+name_field: name
+
+tasks:
+- name: sleep
+  bind: samples
+  parallel: 2
+  command: |
+    echo {{.name}}
+    sleep {{.secs}}
+
+objects:
+  samples:
+  - {name: a1, secs: 5}
+  - {name: a2, secs: 8}
+  - {name: a3, secs: 10}
+  - {name: a4, secs: 7}
