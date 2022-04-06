@@ -27,7 +27,7 @@ func TestTemplate(t *testing.T) {
 }
 
 func TestLoadPipeline(t *testing.T) {
-	p, err := LoadPipeline("../examples/pipeline.yaml")
+	p, err := LoadPipeline("../examples/Project01.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

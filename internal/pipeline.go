@@ -18,10 +18,10 @@ import (
 )
 
 type Task struct {
-	Name     string `mapstructure:"name"`
-	Bind     string `mapstructure:"bind"`
-	Parallel uint   `mapstructure:"parallel"`
-	Command  string `mapstructure:"command"`
+	Name     string `mapstructure:"name" json:"name,omitempty"`
+	Bind     string `mapstructure:"bind" json:"bind,omitempty"`
+	Parallel uint   `mapstructure:"parallel" json:"parallel,omitempty"`
+	Command  string `mapstructure:"command" json:"command,omitempty"`
 
 	command  *template.Template
 	objects  []map[string]string
@@ -33,12 +33,14 @@ type Pipeline struct {
 	Tasks    []Task                         `mapstructure:"tasks"`
 	Objects  map[string][]map[string]string `mapstructure:"objects"`
 
+	at        time.Time
+	runName   string
 	dir       string
 	nameField string
 	taskMap   map[string]int
 }
 
-func LoadPipeline(fp string) (pl *Pipeline, err error) {
+func LoadPipeline(fp string, runNames ...string) (pl *Pipeline, err error) {
 	var (
 		ok   bool
 		name string
@@ -79,16 +81,37 @@ func LoadPipeline(fp string) (pl *Pipeline, err error) {
 	if pl.dir = conf.GetString("work_dir"); pl.dir == "" {
 		pl.dir = DEFAULT_Dir
 	}
-	pl.dir = filepath.Join(
-		pl.dir,
-		pl.Pipeline+"_"+time.Now().Format("2006-01-02T15-04-05_")+RandString(8),
-	)
+
+	if len(runNames) > 0 && runNames[0] != "" {
+		pl.runName = runNames[0]
+	} else {
+		pl.runName = RandString(16)
+	}
+	pl.at = time.Now()
+
+	pl.dir = filepath.Join(pl.dir, pl.Pipeline+"_"+pl.runName)
 
 	if pl.nameField = conf.GetString("name_field"); pl.nameField == "" {
 		pl.nameField = DEFAULT_NameField
 	}
 
 	if err = os.MkdirAll(pl.dir, 0755); err != nil {
+		return nil, err
+	}
+
+	meta := fmt.Sprintf(
+		"meta_%s_%d.json", pl.at.Format("2006-01-02T15-04-05"), pl.at.UnixMilli(),
+	)
+	meta = filepath.Join(pl.dir, meta)
+
+	bts, _ := json.MarshalIndent(map[string]interface{}{
+		"pipeline": pl.Pipeline,
+		"at":       pl.at.Format("2006-01-02T15-04-05"),
+		"runName":  pl.runName,
+		"tasks":    pl.Tasks,
+		"objects":  pl.Objects,
+	}, "", "  ")
+	if err = ioutil.WriteFile(meta, bts, 0644); err != nil {
 		return nil, err
 	}
 
@@ -207,7 +230,11 @@ func (pl *Pipeline) run(idx int, pn int, objects ...string) (errs []error) {
 				}
 
 				if started {
-					os.Rename(prefix+".logging", prefix+".log")
+					if err == nil {
+						os.Rename(prefix+".logging", prefix+".log")
+					} else {
+						os.Rename(prefix+".logging", prefix+".failed")
+					}
 
 					if info, e := os.Stat(prefix + ".error"); e == nil {
 						if info.Size() == 0 {
